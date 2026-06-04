@@ -10,6 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const logoutBtn = document.getElementById("logout-btn");
   const loginModal = document.getElementById("login-modal");
   const loginForm = document.getElementById("login-form");
+  const loginUsernameInput = document.getElementById("login-username");
   const loginError = document.getElementById("login-error");
   const cancelLoginBtn = document.getElementById("cancel-login-btn");
   const loggedInInfo = document.getElementById("logged-in-info");
@@ -53,6 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
     loginModal.classList.remove("hidden");
     loginError.classList.add("hidden");
     loginForm.reset();
+    loginUsernameInput.focus();
   });
 
   cancelLoginBtn.addEventListener("click", () => {
@@ -91,18 +93,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
   logoutBtn.addEventListener("click", async () => {
     const token = getToken();
-    if (token) {
-      await fetch("/auth/logout", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+    try {
+      if (token) {
+        await fetch("/auth/logout", {
+          method: "POST",
+          headers: { Authorization: "Bearer " + token },
+        });
+      }
+    } catch (error) {
+      console.error("Error during logout:", error);
+    } finally {
+      sessionStorage.removeItem("authToken");
+      sessionStorage.removeItem("authUsername");
+      loggedInUser.textContent = "";
+      updateAuthUI();
     }
-    sessionStorage.removeItem("authToken");
-    sessionStorage.removeItem("authUsername");
-    loggedInUser.textContent = "";
-    updateAuthUI();
   });
-
   // Function to fetch activities from API
   async function fetchActivities() {
     try {

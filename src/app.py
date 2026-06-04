@@ -41,7 +41,7 @@ def _verify_password(password: str, salt: str, stored_hash: str) -> bool:
     computed = hashlib.pbkdf2_hmac(
         "sha256", password.encode(), bytes.fromhex(salt), 100000
     )
-    return computed.hex() == stored_hash
+    return secrets.compare_digest(computed.hex(), stored_hash)
 
 
 def _require_auth(authorization: Optional[str]) -> str:
@@ -125,6 +125,9 @@ def login(credentials: LoginRequest):
     teacher = teachers[username]
     if not _verify_password(credentials.password, teacher["salt"], teacher["hash"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
+    for existing_token, session_username in list(active_sessions.items()):
+        if session_username == username:
+            active_sessions.pop(existing_token, None)
     token = secrets.token_hex(32)
     active_sessions[token] = username
     return {"token": token, "username": username}
